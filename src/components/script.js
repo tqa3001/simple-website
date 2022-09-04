@@ -1,5 +1,17 @@
 /* Variable Declaration */
 
+class Data {
+  constructor(wordLowerBound, timeLowerBound, topic, quote, count, started, completed) {
+    this.wordLowerBound = wordLowerBound;  
+    this.timeLowerBound = timeLowerBound; 
+    this.topic = topic; 
+    this.quote = quote; 
+    this.count = count; 
+    this.started = started; 
+    this.completed = completed; 
+  }
+}
+
 // STATIC server-side variables  
 let topics = ["fornite", "love", "existentialism", "carl jung", "rejection", "compatibility"]; 
 let quotes = [
@@ -7,20 +19,18 @@ let quotes = [
   {quote: "We must not let our shortcomings become normality", author: "Angela Markel"},
   {quote: "Unimelb mid", author: ""}
 ]
-let progress = [0, 1, 1, 1, 0, 1, 0, 0, 1, 1]; 
+let allData = [ // is it necessary to check if data is sound? 
+  new Data(0, 20, "fornite", undefined, 12, true, true),
+  new Data(0, 20, "ihouse", undefined, 0, false, false), 
+  new Data(0, 20, "balls", undefined, 50, true, false),
+  new Data(0, 20, "the industrial society and its future", undefined, 100, true, true),
+]; 
 
 // STATIC client variables
-let data = {
-  wordLowerBound: Number, 
-  timeLowerBound: Number, 
-  topic: String,  
-  quote: Object,
-  started: Boolean, 
-  completed: Boolean, 
-}
+let state; 
 
 // HTML Elements
-let editor; 
+let editor, graph;  
 let aElement; 
 
 // Buttons
@@ -28,43 +38,38 @@ let downloadButton, startButton, openInputButton, completeButton;
 
 /* Initialization Functions */
 
-function initStaticData() {
-  data.wordLowerBound = 20; 
-  data.timeLowerBound = 4 * 1000; // in milliseconds
-  data.topic = randomElement(topics); 
-  data.quote = randomElement(quotes); 
-  data.started = false; 
-  data.completed = false; 
+function initState() {
+  state = new Data(20, 4 * 1000, randomElement(topics), randomElement(quotes), 0, false, false); 
 }
 
 function initVariables() {
-  editor = document.getElementById("text-editor"); 
+  editor = document.getElementById("text-editor");
+  graph = document.getElementById("graph"); 
   aElement = document.createElement("a"); 
   startButton = document.getElementById("start");
   downloadButton = document.getElementById("download");
   openInputButton = document.getElementById("open");
   completeButton = document.getElementById("mark-complete"); 
-  initStaticData(); 
 }
 
 /* Functions for displaying data */
 
 function displayData() {
   document.getElementById("display-date").innerHTML = getDate(); 
-  document.getElementById("topic").innerHTML = "Today's topic: " + data.topic; 
+  document.getElementById("topic").innerHTML = "Today's topic: " + state.topic; 
   document.getElementById("writing-specs").innerHTML = 
-    ("Goal: At least " + data.wordLowerBound + " words and " + getMinute(data.timeLowerBound) + " minutes of writing"); 
+    ("Goal: At least " + state.wordLowerBound + " words and " + getMinute(state.timeLowerBound) + " minutes of writing"); 
 }
 
 /* Functions for the editor */
 
-function updateWordCount() { 
+function updateWordCount() { // Bad time complexity 
   let s = editor.value; 
-  let cnt = 0; 
+  state.count = 0; 
   for (let i = 0; i < s.length - 1; i++) 
-    cnt += ((s[i] == '\n' || s[i] == ' ') && s[i + 1] != ' '); 
-  if (s) cnt++; 
-  document.getElementById("show-word-count").innerHTML = "Word count: " + cnt; 
+    state.count += ((s[i] == '\n' || s[i] == ' ') && s[i + 1] != ' '); 
+  if (s) state.count++; 
+  document.getElementById("show-word-count").innerHTML = "Word count: " + state.count; 
 }
 
 function quoteString(quoteObj) {
@@ -73,7 +78,7 @@ function quoteString(quoteObj) {
 
 function initEditor() {
   editor.oninput = updateWordCount;
-  editor.placeholder = quoteString(data.quote);
+  editor.placeholder = quoteString(state.quote);
   editor.readOnly = true; 
 }
 
@@ -107,7 +112,7 @@ function initOpenButton() {
 /* Start Button */ 
 
 function startTimer() {
-  currentTime = data.timeLowerBound; 
+  currentTime = state.timeLowerBound; 
   let timer = document.getElementById("timer"); 
   let func = setInterval(() => {
     currentTime -= 1000;  
@@ -124,7 +129,7 @@ function startTimer() {
 function initStartButton() {
   startButton.innerHTML = "Start";
   startButton.onclick = () => {
-    data.started = true; 
+    state.started = true; 
     startButton.innerHTML = "Do your best ^^";
     startButton.disabled = true; 
     editor.readOnly = false; 
@@ -141,22 +146,39 @@ function initCompleteButton() {
     completeButton.disabled = false; 
   }); 
   completeButton.onclick = () => {
-    if (!data.completed) {
-      data.completed = true; 
+    if (!state.completed) {
+      state.completed = true; 
       completeButton.style.backgroundColor = "green"; 
       completeButton.style.color = "white";  
       completeButton.innerHTML = "Done";    
+      editor.readOnly = true; 
+      saveData(state); 
     }
   }; 
 }
 
+/* Display bar graph of the progress */
+
+function fetchProgress(init=false) {
+  for (let i = (init ? 0 : allData.length - 1); i < allData.length; i++) {
+    let data = allData[i]
+    graph.innerHTML += `Day ${i}: ${data.count} words <br>`  
+  }
+}
+
+function saveData(data) {
+  allData.push(data); 
+  fetchProgress(); 
+}
 
 window.onload = () => {
   initVariables(); 
+  initState(); 
   displayData(); 
   initEditor(); 
   initDownloadButton(); 
   initOpenButton(); 
   initStartButton(); 
   initCompleteButton(); 
+  fetchProgress(true); 
 }
