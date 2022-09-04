@@ -1,30 +1,35 @@
 /* Variable Declaration */
-// STATIC User-data variables  
+
+// STATIC server-side variables  
+let topics = ["fornite", "love", "existentialism", "carl jung", "rejection", "compatibility"]; 
+let quotes = [
+  {quote: "One who has a why can bear any how", author: "Friedrich Nietzche"}, 
+  {quote: "We must not let our shortcomings become normality", author: "Angela Markel"},
+  {quote: "Unimelb mid", author: ""}
+]
+let progress = [0, 1, 1, 1, 0, 1, 0, 0, 1, 1]; 
+
+// STATIC client variables
 let data = {
   wordLowerBound: Number, 
   timeLowerBound: Number, 
-  progress: [], 
-  topics: [], 
-  quotes: [] 
+  topic: String,  
+  quote: Object,
+  started: Boolean, 
 }
+
 // HTML Elements
 let editor; 
 let aElement; 
 
-/* Functions */
+/* Initialization Functions */
 
 function initStaticData() {
   data.wordLowerBound = 20; 
-  data.timeLowerBound = 3000; // ms
-  data.progress = [0, 1, 1, 1, 0, 1, 0, 1, 0]; 
-  data.topics = [
-    "fornite", "love", "existentialism", "carl jung", "rejection", "compatibility",
-  ]; 
-  data.quotes = [
-    {quote: "One who has a why can bear any how", author: "Friedrich Nietzche"}, 
-    {quote: "We must not let our shortcomings become normality", author: "Angela Markel"},
-    {quote: "Unimelb mid", author: ""}
-  ]; 
+  data.timeLowerBound = 3 * 60 * 1000; // in milliseconds
+  data.topic = randomElement(topics); 
+  data.quote = randomElement(quotes); 
+  data.started = false; 
 }
 
 function initVariables() {
@@ -32,6 +37,17 @@ function initVariables() {
   aElement = document.createElement("a"); 
   initStaticData(); 
 }
+
+/* Functions for displaying data */
+
+function displayData() {
+  document.getElementById("display-date").innerHTML = getDate(); 
+  document.getElementById("topic").innerHTML = "Today's topic: " + data.topic; 
+  document.getElementById("writing-specs").innerHTML = 
+    ("Goal: At least " + data.wordLowerBound + " words and " + getMinute(data.timeLowerBound) + " minutes of writing"); 
+}
+
+/* Functions for the editor */
 
 function updateWordCount() { 
   let s = editor.value; 
@@ -48,8 +64,11 @@ function quoteString(quoteObj) {
 
 function initEditor() {
   editor.oninput = updateWordCount;
-  editor.placeholder = quoteString(randomElement(data.quotes));
+  editor.placeholder = quoteString(data.quote);
+  editor.readOnly = true; 
 }
+
+/* Download file button */
 
 function initDownloadButton() { 
   let downloadButton = document.getElementById("download")
@@ -63,6 +82,8 @@ function initDownloadButton() {
   }; 
 }
 
+/* Open file button */
+
 function initOpenButton() {
   let fileElement = document.getElementById("open"); 
   fileElement.onchange = () => {
@@ -75,13 +96,39 @@ function initOpenButton() {
   }; 
 }
 
-function init() {
+/* Start Button */ 
+
+function startTimer() {
+  currentTime = data.timeLowerBound; 
+  let timer = document.getElementById("timer"); 
+  let func = setInterval(() => {
+    currentTime -= 1000;  
+    timer.innerHTML = displayTimer(currentTime); 
+    if (!currentTime) {
+      timer.innerHTML = "Well done! You've wrote for at least " + getMinute(data.timeLowerBound) ; 
+      clearInterval(func); 
+    }
+  }, 1000);
+}
+
+function initStartButton() {
+  let startButton = document.getElementById("start"); 
+  startButton.innerHTML = "Start";
+  startButton.onclick = () => {
+    data.started = true; 
+    startButton.innerHTML = "Do your best ^^";
+    startButton.disabled = true; 
+    editor.readOnly = false; 
+    startTimer(); 
+  }; 
+}
+
+
+window.onload = () => {
   initVariables(); 
+  displayData(); 
   initEditor(); 
   initDownloadButton(); 
   initOpenButton(); 
-}
-
-window.onload = () => {
-  init(); 
+  initStartButton(); 
 }
