@@ -16,25 +16,34 @@ let data = {
   topic: String,  
   quote: Object,
   started: Boolean, 
+  completed: Boolean, 
 }
 
 // HTML Elements
 let editor; 
 let aElement; 
 
+// Buttons
+let downloadButton, startButton, openInputButton, completeButton; 
+
 /* Initialization Functions */
 
 function initStaticData() {
   data.wordLowerBound = 20; 
-  data.timeLowerBound = 3 * 60 * 1000; // in milliseconds
+  data.timeLowerBound = 4 * 1000; // in milliseconds
   data.topic = randomElement(topics); 
   data.quote = randomElement(quotes); 
   data.started = false; 
+  data.completed = false; 
 }
 
 function initVariables() {
   editor = document.getElementById("text-editor"); 
   aElement = document.createElement("a"); 
+  startButton = document.getElementById("start");
+  downloadButton = document.getElementById("download");
+  openInputButton = document.getElementById("open");
+  completeButton = document.getElementById("mark-complete"); 
   initStaticData(); 
 }
 
@@ -71,7 +80,7 @@ function initEditor() {
 /* Download file button */
 
 function initDownloadButton() { 
-  let downloadButton = document.getElementById("download")
+  downloadButton.innerHTML = "Download"; 
   downloadButton.onclick = () => {
     let content = editor.value; 
     let blob = new Blob([content], {type: "plain/text"}); 
@@ -84,11 +93,10 @@ function initDownloadButton() {
 
 /* Open file button */
 
-function initOpenButton() {
-  let fileElement = document.getElementById("open"); 
-  fileElement.onchange = () => {
+function initOpenButton() { 
+  openInputButton.onchange = () => {
     let reader = new FileReader();
-    reader.readAsText(fileElement.files[0]);  
+    reader.readAsText(openInputButton.files[0]);  
     reader.onload = () => {
       editor.value = reader.result;
       updateWordCount(); 
@@ -105,14 +113,15 @@ function startTimer() {
     currentTime -= 1000;  
     timer.innerHTML = displayTimer(currentTime); 
     if (!currentTime) {
-      timer.innerHTML = "Well done! You've wrote for at least " + getMinute(data.timeLowerBound) ; 
+      timer.innerHTML = "Well done!"; 
+      let event = new CustomEvent("goalAchieved"); 
+      completeButton.dispatchEvent(event); 
       clearInterval(func); 
     }
   }, 1000);
 }
 
 function initStartButton() {
-  let startButton = document.getElementById("start"); 
   startButton.innerHTML = "Start";
   startButton.onclick = () => {
     data.started = true; 
@@ -120,6 +129,24 @@ function initStartButton() {
     startButton.disabled = true; 
     editor.readOnly = false; 
     startTimer(); 
+  }; 
+}
+
+/* Mark complete button */
+
+function initCompleteButton() {
+  completeButton.innerHTML = "Mark as done"; 
+  completeButton.disabled = true; 
+  completeButton.addEventListener("goalAchieved", () => {
+    completeButton.disabled = false; 
+  }); 
+  completeButton.onclick = () => {
+    if (!data.completed) {
+      data.completed = true; 
+      completeButton.style.backgroundColor = "green"; 
+      completeButton.style.color = "white";  
+      completeButton.innerHTML = "Done";    
+    }
   }; 
 }
 
@@ -131,4 +158,5 @@ window.onload = () => {
   initDownloadButton(); 
   initOpenButton(); 
   initStartButton(); 
+  initCompleteButton(); 
 }
